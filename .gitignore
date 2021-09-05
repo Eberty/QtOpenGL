@@ -1,0 +1,6 @@
+# Compiled files
+QtOpenGL
+
+# Others
+build/*
+*.code-workspace
