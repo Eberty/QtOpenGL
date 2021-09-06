@@ -2,7 +2,6 @@
 
 in vec3 aPosition;
 in vec3 aNormal;
-in vec4 aColor;
 in vec2 aCoords;
 
 uniform mat4 uM;

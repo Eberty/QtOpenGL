@@ -1,7 +1,5 @@
 #version 130
 
-precision mediump float;
-
 uniform vec3 uLPos;
 uniform vec3 uCamPos;
 
