@@ -9,15 +9,41 @@
 
 #include "ui_main_window.h"
 
+/**
+ * TODO.
+ */
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
  public:
-  explicit MainWindow(QWidget *parent = 0);
+  /**
+   * Class constructor.
+   *
+   * @param filename: TODO.
+   */
+  explicit MainWindow(const QString& filename = "");
+
+  /**
+   * Destructor of the class.
+   */
   ~MainWindow();
 
  private:
-  Ui::MainWindowLayout *ui_;
+  /**
+   * TODO.
+   */
+  void selectFile();
+
+  /**
+   * TODO.
+   *
+   * @param filename: TODO.
+   *
+   * @return TODO.
+   */
+  bool loadObjFile(const QString &filename);
+
+  Ui::MainWindowLayout *ui_; /**< User interface layout */
 };
 
 #endif  // MAIN_WINDOW_H_

@@ -3,7 +3,7 @@
  <class>MainWindowLayout</class>
  <widget class="QMainWindow" name="MainWindowLayout">
   <property name="windowTitle">
-   <string>Viewer</string>
+   <string>QtOpenGL - Eberty Alves</string>
   </property>
   <widget class="QWidget" name="central_widget">
    <layout class="QGridLayout" name="gridLayout">

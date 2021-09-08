@@ -1,7 +1,7 @@
 <RCC>
   <qresource prefix="/">
     <file>QtOpenGL.png</file>
-    <file>shaders/phong.frag</file>
-    <file>shaders/phong.vert</file>
+    <file>phong.frag</file>
+    <file>phong.vert</file>
   </qresource>
 </RCC>
