@@ -41,7 +41,7 @@ class MainWindow : public QMainWindow {
    *
    * @return TODO.
    */
-  bool loadObjFile(const QString &filename);
+  bool loadMesh(const QString &filename);
 
   Ui::MainWindowLayout *ui_; /**< User interface layout */
 };

@@ -40,11 +40,27 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   /**
    * TODO.
    *
+   * @param use_material: TODO.
+   */
+  void setUseMaterial(const bool use_material);
+
+  /**
+   * TODO.
+   *
    * @param filename: TODO.
    *
    * @return TODO.
    */
-  bool loadObjFile(const QString &filename);
+  bool loadMesh(const QString &filename);
+
+  /**
+   * TODO.
+   *
+   * @param filename: TODO.
+   *
+   * @return TODO.
+   */
+  bool loadTexture(const QString &filename);
 
  protected:
   /**
@@ -72,7 +88,6 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   void keyPressEvent(QKeyEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
   bool event(QEvent *event) override;
 
@@ -97,7 +112,7 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   /**
    * TODO.
    */
-  void updateAttributeLocations();
+  void getAttributeLocations();
 
   /**
    * TODO.
@@ -107,7 +122,7 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   /**
    * TODO.
    */
-  void vboClearAll();
+  void clearAllVBOs();
 
   /**
    * TODO.
@@ -137,11 +152,9 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   /**
    * TODO.
    *
-   * @param filename: TODO.
-   *
    * @return TODO.
    */
-  int loadTexture(const QString &filename);
+  bool isValidTexture();
 
   /**
    * TODO.
@@ -157,11 +170,6 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
 
   /**
    * TODO.
-   */
-  void updateMouse();
-
-  /**
-   * TODO.
    *
    * @param x: TODO.
    * @param y: TODO.
@@ -170,7 +178,7 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
    */
   QVector3D getArcBallVector(int x, int y);
 
-  QColor clear_color_ = Qt::black; /**< TODO */
+  QColor clear_color_ = Qt::white; /**< TODO */
 
   QOpenGLShaderProgram shader_program_; /**< TODO */
   QOpenGLTexture *texture_ = NULL;      /**< TODO */
@@ -180,7 +188,7 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   bool is_texture_loaded_ = false; /**< TODO */
   bool use_material_ = true;       /**< TODO */
 
-  float camera_pos_z_mult_ = 1.0;  /**< TODO */
+  float camera_pos_z_mult_ = 1.0; /**< TODO */
 
   int vertex_location_;           /**< TODO */
   int vertex_color_location_;     /**< TODO */
@@ -192,15 +200,12 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   std::vector<float> vbo_colors_;         /**< TODO */
   std::vector<float> vbo_texture_coords_; /**< TODO */
 
-  bool is_rotating_; /**< TODO */
-
-  int old_x_, old_y_; /**< TODO */
-  int new_x_, new_y_; /**< TODO */
+  QPoint last_pos_; /**< TODO */
 
   QMatrix4x4 rotation_matrix_; /**< TODO */
 
-  QVector3D light_pos_ = QVector3D(1000, 1000, 1000); /**< TODO */
-  QVector3D camera_pos_;                              /**< TODO */
+  QVector3D light_pos_;  /**< TODO */
+  QVector3D camera_pos_; /**< TODO */
 
   QVector3D scene_min_;    /**< TODO */
   QVector3D scene_max_;    /**< TODO */

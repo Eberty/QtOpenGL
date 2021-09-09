@@ -16,7 +16,7 @@ in vec3 vPosW;
 in vec2 vCoords;
 
 void main(void) {
-  vec4 vColor = (uTexLoad > 0) ? texture(uTextureID, vCoords) : matAmb;
+  vec4 vColor = (uTexLoad > 0) ? texture(uTextureID, vCoords) : matDif;
 
   vec4 ambient = vec4(vColor.rgb * matAmb.rgb, matAmb.a);
   vec3 vL = normalize(uLPos - vPosW);

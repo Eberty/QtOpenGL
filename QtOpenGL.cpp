@@ -29,10 +29,9 @@ void QtOpenGL::setClearColor(const QColor& color) {
   }
 }
 
-bool QtOpenGL::loadObjFile(const QString& filename) {
-  resetView();
-  vboClearAll();
+void QtOpenGL::setUseMaterial(const bool use_material) { use_material_ = use_material; }
 
+bool QtOpenGL::loadMesh(const QString& filename) {
   QFileInfo file(filename);
   if (!file.exists(filename) || !file.completeSuffix().endsWith("obj")) {
     qWarning() << filename << "is not a valid file.";
@@ -47,6 +46,9 @@ bool QtOpenGL::loadObjFile(const QString& filename) {
     return false;
   }
 
+  resetView();
+  clearAllVBOs();
+
   float max = std::numeric_limits<float>::max();
   float min = std::numeric_limits<float>::min();
 
@@ -57,6 +59,31 @@ bool QtOpenGL::loadObjFile(const QString& filename) {
 
   scene_center_ = QVector3D(scene_min_ + scene_max_) / 2.0;
 
+  max = qMax(scene_max_.x(), qMax(scene_max_.y(), scene_max_.z()));
+  light_pos_ = QVector3D(max, max, max) * 3.0;
+
+  return true;
+}
+
+bool QtOpenGL::loadTexture(const QString& filename) {
+  if (filename.isEmpty()) {
+    texture_ = NULL;
+    return false;
+  }
+
+  QImage image = QImage(filename);
+  texture_ = new QOpenGLTexture(image.mirrored());
+  texture_->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+  texture_->setMagnificationFilter(QOpenGLTexture::Linear);
+  texture_->setWrapMode(QOpenGLTexture::ClampToEdge);
+
+  if (texture_->textureId() == 0) {
+    texture_ = NULL;
+    qWarning() << "Texture import failed.";
+    return false;
+  }
+
+  texture_->bind();
   return true;
 }
 
@@ -64,13 +91,9 @@ void QtOpenGL::paintGL(void) {
   glClearColor(clear_color_.redF(), clear_color_.greenF(), clear_color_.blueF(), clear_color_.alphaF());
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (vbo_vertices_.empty() || vbo_colors_.empty() || vbo_normals_.empty()) {
-    return;
-  }
-
   QMatrix4x4 projection;
-  projection.perspective(45.0f, (width() / static_cast<float>(height() ? height() : 1)), 0.01, 100000.0);
-
+  float near = scene_max_.distanceToPoint(scene_min_) / 500.0;
+  projection.perspective(45.0f, (width() / static_cast<float>(height() ? height() : 1)), near, 100000.0);
   camera_pos_ = QVector3D(scene_center_.x(), scene_center_.y(), (scene_max_.z() * 5.0) * camera_pos_z_mult_);
 
   QMatrix4x4 view;
@@ -80,6 +103,11 @@ void QtOpenGL::paintGL(void) {
 
   QMatrix4x4 MVP = projection * view * rotation_matrix_;
   setUniformValues(MVP);
+
+  if (texture_) {
+    glBindTexture(GL_TEXTURE_2D, texture_->textureId());
+  }
+
   drawMesh();
 
   shader_program_.release();
@@ -95,7 +123,7 @@ void QtOpenGL::initializeGL() {
 
   shader_program_.link();
 
-  updateAttributeLocations();
+  getAttributeLocations();
   is_texture_loaded_ = loadTexture(texture_filename_);
 }
 
@@ -107,48 +135,44 @@ void QtOpenGL::keyPressEvent(QKeyEvent* event) {
     case Qt::Key_Space:
       resetView();
       break;
+    case Qt::Key_Period:
+      makeCurrent();
+      glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+      break;
+    case Qt::Key_Minus:
+      makeCurrent();
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      break;
+    case Qt::Key_F:
+      makeCurrent();
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      break;
     default:
       break;
   }
-  event->accept();
 }
 
 void QtOpenGL::mouseMoveEvent(QMouseEvent* event) {
   if (event->buttons() & Qt::LeftButton) {
-    if (is_rotating_) {
-      new_x_ = event->x();
-      new_y_ = event->y();
-      updateMouse();
-    }
-    old_x_ = event->x();
-    old_y_ = event->y();
+    QVector3D v = getArcBallVector(last_pos_.x(), last_pos_.y());
+    QVector3D u = getArcBallVector(event->x(), event->y());
+
+    float angle = qAcos(qMin(1.0f, QVector3D::dotProduct(u, v)));
+
+    QVector3D rot_axis = QVector3D::crossProduct(v, u);
+    QVector3D rot_vector = rotation_matrix_.inverted() * rot_axis;
+
+    last_pos_ = event->pos();
+
+    rotation_matrix_.rotate(qRadiansToDegrees(angle), rot_vector);
   }
 }
 
-void QtOpenGL::mousePressEvent(QMouseEvent* event) {
-  if (event->button() == Qt::LeftButton) {
-    old_x_ = new_x_ = event->x();
-    old_y_ = new_y_ = event->y();
-
-    is_rotating_ = true;
-  } else {
-    is_rotating_ = false;
-  }
-}
-
-void QtOpenGL::mouseReleaseEvent(QMouseEvent* event) {
-  if (event->button() == Qt::LeftButton) {
-    is_rotating_ = false;
-  }
-}
+void QtOpenGL::mousePressEvent(QMouseEvent* event) { last_pos_ = event->pos(); }
 
 void QtOpenGL::wheelEvent(QWheelEvent* event) {
   camera_pos_z_mult_ *=
       (event->delta() > 0) ? (camera_pos_z_mult_ < 10 ? 1.25 : 1.0) : (camera_pos_z_mult_ > 0.1 ? 0.8 : 1.0);
-  old_x_ = new_x_ = event->pos().x();
-  old_y_ = new_y_ = event->pos().y();
-  updateMouse();
-  event->accept();
 }
 
 bool QtOpenGL::event(QEvent* event) {
@@ -157,7 +181,6 @@ bool QtOpenGL::event(QEvent* event) {
     case QEvent::Show:
     case QEvent::KeyPress:
     case QEvent::MouseButtonPress:
-    case QEvent::MouseButtonRelease:
     case QEvent::MouseMove:
     case QEvent::Wheel:
       this->update();
@@ -170,13 +193,24 @@ bool QtOpenGL::event(QEvent* event) {
 
 void QtOpenGL::createCustomContextMenu() {
   setContextMenuPolicy(Qt::CustomContextMenu);
+
   QMenu* menu = new QMenu(this);
-  QAction* action = new QAction("Background color", this);
-  connect(action, &QAction::triggered, this, [this]() {
+
+  QAction* material_action = new QAction("Shading", this);
+  material_action->setCheckable(true);
+  material_action->setChecked(use_material_);
+  connect(material_action, &QAction::toggled, this, &QtOpenGL::setUseMaterial);
+  menu->addAction(material_action);
+
+  menu->addSeparator();
+
+  QAction* color_action = new QAction("Change background color", this);
+  connect(color_action, &QAction::triggered, this, [this]() {
     QColor color = QColorDialog::getColor(clear_color_, this);
     setClearColor(color);
   });
-  menu->addAction(action);
+  menu->addAction(color_action);
+
   connect(this, &QLabel::customContextMenuRequested, [this, menu](QPoint pos) { menu->popup(this->mapToGlobal(pos)); });
 }
 
@@ -196,9 +230,11 @@ void QtOpenGL::enableGlCapabilities() {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_NORMALIZE);
   glEnable(GL_TEXTURE_2D);
+
+  glDepthFunc(GL_LESS);
 }
 
-void QtOpenGL::updateAttributeLocations() {
+void QtOpenGL::getAttributeLocations() {
   vertex_location_ = shader_program_.attributeLocation("aPosition");
   vertex_color_location_ = shader_program_.attributeLocation("aColor");
   vertex_normal_location_ = shader_program_.attributeLocation("aNormal");
@@ -206,14 +242,20 @@ void QtOpenGL::updateAttributeLocations() {
 }
 
 void QtOpenGL::resetView() {
-  rotation_matrix_.setToIdentity();
+  makeCurrent();
+
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+  use_material_ = true;
   camera_pos_z_mult_ = 1.0;
+
+  rotation_matrix_.setToIdentity();
 }
 
-void QtOpenGL::vboClearAll() {
+void QtOpenGL::clearAllVBOs() {
   vbo_vertices_.clear();
-  vbo_normals_.clear();
   vbo_colors_.clear();
+  vbo_normals_.clear();
   vbo_texture_coords_.clear();
 }
 
@@ -221,25 +263,21 @@ int QtOpenGL::traverseScene(const aiScene* sc, const aiNode* nd) {
   int tot_vertices = 0;
   for (unsigned int n = 0; n < nd->mNumMeshes; n++) {
     const aiMesh* mesh = sc->mMeshes[nd->mMeshes[n]];
-
     updateMaterial(sc->mMaterials[mesh->mMaterialIndex], n);
 
     for (unsigned int t = 0; t < mesh->mNumFaces; t++) {
       const aiFace* face = &mesh->mFaces[t];
-
       for (unsigned int i = 0; i < face->mNumIndices; i++) {
         int index = face->mIndices[i];
 
-        vbo_colors_.push_back(ambient_material_[0]);
-        vbo_colors_.push_back(ambient_material_[1]);
-        vbo_colors_.push_back(ambient_material_[2]);
-        vbo_colors_.push_back(ambient_material_[3]);
+        vbo_colors_.push_back(ambient_material_.x());
+        vbo_colors_.push_back(ambient_material_.y());
+        vbo_colors_.push_back(ambient_material_.z());
+        vbo_colors_.push_back(ambient_material_.w());
 
         if (mesh->HasTextureCoords(0)) {
-          vbo_texture_coords_.push_back(mesh->mTextureCoords[0][index][0]);
-          vbo_texture_coords_.push_back(mesh->mTextureCoords[0][index][1]);
-        } else {
-          is_texture_loaded_ = false;
+          vbo_texture_coords_.push_back(mesh->mTextureCoords[0][index].x);
+          vbo_texture_coords_.push_back(mesh->mTextureCoords[0][index].y);
         }
 
         if (mesh->mNormals != NULL) {
@@ -249,11 +287,9 @@ int QtOpenGL::traverseScene(const aiScene* sc, const aiNode* nd) {
         }
 
         aiVector3D vertex = mesh->mVertices[index];
-
         vbo_vertices_.push_back(vertex.x);
         vbo_vertices_.push_back(vertex.y);
         vbo_vertices_.push_back(vertex.z);
-
         updateSceneBoundingBox(vertex);
 
         tot_vertices++;
@@ -280,59 +316,27 @@ void QtOpenGL::updateSceneBoundingBox(const aiVector3D& vertex) {
 
 void QtOpenGL::updateMaterial(const aiMaterial* const material, const int mesh_index) {
   aiColor4D c;
-  float o;
   aiString s;
 
   if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_AMBIENT, c)) {
-    // qInfo() << "Ka" << c.r << c.g << c.b;
     ambient_material_ = QVector4D(c.r, c.g, c.b, c.a);
   }
   if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_DIFFUSE, c)) {
-    // qInfo() << "Kd" << c.r << c.g << c.b;
     diffuse_material_ = QVector4D(c.r, c.g, c.b, c.a);
   }
   if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_SPECULAR, c)) {
-    // qInfo() << "Ks" << c.r << c.g << c.b;
     specular_material_ = QVector4D(c.r, c.g, c.b, c.a);
-  }
-  if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS, o) && o) {
-    // qInfo() << "Ns" << o;
   }
 
   if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE_DIFFUSE(mesh_index), s)) {
-    // qInfo() << "map_Kd" << s.data;
-    is_texture_loaded_ = true;
     texture_filename_ = QFileInfo(s.data).absolutePath() + QString(QDir::separator()) + s.C_Str();
   } else {
-    is_texture_loaded_ = false;
     texture_filename_.clear();
   }
 }
 
-int QtOpenGL::loadTexture(const QString& filename) {
-  if (filename.isEmpty()) {
-    texture_ = NULL;
-    return false;
-  }
-
-  if (texture_) {
-    texture_->release();
-  }
-
-  QImage image = QImage(filename);
-  texture_ = new QOpenGLTexture(image.mirrored());
-  texture_->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-  texture_->setMagnificationFilter(QOpenGLTexture::Linear);
-  texture_->setWrapMode(QOpenGLTexture::ClampToEdge);
-
-  if (texture_->textureId() == 0) {
-    texture_ = NULL;
-    qWarning() << "Texture import failed.";
-    return false;
-  }
-
-  texture_->bind();
-  return true;
+bool QtOpenGL::isValidTexture() {
+  return (is_texture_loaded_ && !vbo_texture_coords_.empty() && !texture_filename_.isEmpty());
 }
 
 void QtOpenGL::setUniformValues(const QMatrix4x4& MVP) {
@@ -349,14 +353,15 @@ void QtOpenGL::setUniformValues(const QMatrix4x4& MVP) {
   shader_program_.setUniformValue("uN", normal_matrix);
   shader_program_.setUniformValue("uM", rotation_matrix_);
 
-  if (texture_) {
-    glBindTexture(GL_TEXTURE_2D, texture_->textureId());
-  }
-  shader_program_.setUniformValue("uTexLoad", is_texture_loaded_);
+  shader_program_.setUniformValue("uTexLoad", isValidTexture());
   shader_program_.setUniformValue("uMaterial", use_material_);
 }
 
 void QtOpenGL::drawMesh() {
+  if (vbo_vertices_.empty() || vbo_colors_.empty() || vbo_normals_.empty()) {
+    return;
+  }
+
   shader_program_.setAttributeArray(vertex_location_, &vbo_vertices_[0], 3);
   shader_program_.enableAttributeArray(vertex_location_);
 
@@ -366,7 +371,7 @@ void QtOpenGL::drawMesh() {
   shader_program_.setAttributeArray(vertex_normal_location_, &vbo_normals_[0], 3);
   shader_program_.enableAttributeArray(vertex_normal_location_);
 
-  if (is_texture_loaded_) {
+  if (isValidTexture()) {
     shader_program_.setAttributeArray(vertex_uv_coords_location_, &vbo_texture_coords_[0], 2);
     shader_program_.enableAttributeArray(vertex_uv_coords_location_);
   }
@@ -376,28 +381,16 @@ void QtOpenGL::drawMesh() {
   shader_program_.disableAttributeArray(vertex_location_);
   shader_program_.disableAttributeArray(vertex_color_location_);
   shader_program_.disableAttributeArray(vertex_normal_location_);
-  if (is_texture_loaded_) {
+  if (isValidTexture()) {
     shader_program_.disableAttributeArray(vertex_uv_coords_location_);
   }
 }
 
-void QtOpenGL::updateMouse() {
-  QVector3D v = getArcBallVector(old_x_, old_y_);
-  QVector3D u = getArcBallVector(new_x_, new_y_);
-
-  float angle = qAcos(qMin(1.0f, QVector3D::dotProduct(u, v)));
-
-  QVector3D rot_axis = QVector3D::crossProduct(v, u);
-  QVector3D rot_vector = rotation_matrix_.inverted() * rot_axis;
-
-  old_x_ = new_x_;
-  old_y_ = new_y_;
-
-  rotation_matrix_.rotate(qRadiansToDegrees(angle), rot_vector);
-}
-
 QVector3D QtOpenGL::getArcBallVector(int x, int y) {
-  QVector3D pt = QVector3D((2.0 * x / width() - 1.0), (2.0 * y / height() - 1.0), 0.0);
+  float w = width() ? width() : 1.0;
+  float h = height() ? height() : 1.0;
+
+  QVector3D pt = QVector3D((2.0 * x / w - 1.0), (2.0 * y / h - 1.0), 0.0);
   pt.setY(pt.y() * -1);
 
   float xy_squared = (pt.x() * pt.x()) + (pt.y() * pt.y());
