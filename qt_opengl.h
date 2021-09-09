@@ -17,6 +17,8 @@
  * TODO.
  */
 class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
+  Q_OBJECT
+
  public:
   /**
    * Class constructor.
@@ -61,6 +63,12 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
    * @return TODO.
    */
   bool loadTexture(const QString &filename);
+
+ Q_SIGNALS:  // NOLINT
+  /**
+   * TODO.
+   */
+  void loadMeshSignal();
 
  protected:
   /**
@@ -183,6 +191,7 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   QOpenGLShaderProgram shader_program_; /**< TODO */
   QOpenGLTexture *texture_ = NULL;      /**< TODO */
 
+  QString mesh_filename_;    /**< TODO */
   QString texture_filename_; /**< TODO */
 
   bool is_texture_loaded_ = false; /**< TODO */

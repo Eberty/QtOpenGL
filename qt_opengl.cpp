@@ -12,6 +12,13 @@
 QtOpenGL::QtOpenGL(QWidget* parent) : QOpenGLWidget(parent) {
   setFocusPolicy(Qt::WheelFocus);
   createCustomContextMenu();
+
+  connect(
+      this, &QtOpenGL::loadMeshSignal, this,
+      [this]() {
+        is_texture_loaded_ = loadTexture(texture_filename_);
+      },
+      Qt::QueuedConnection);
 }
 
 QtOpenGL::~QtOpenGL() {
@@ -62,6 +69,9 @@ bool QtOpenGL::loadMesh(const QString& filename) {
   max = qMax(scene_max_.x(), qMax(scene_max_.y(), scene_max_.z()));
   light_pos_ = QVector3D(max, max, max) * 3.0;
 
+  mesh_filename_ = filename;
+  emit loadMeshSignal();
+
   return true;
 }
 
@@ -71,7 +81,10 @@ bool QtOpenGL::loadTexture(const QString& filename) {
     return false;
   }
 
-  QImage image = QImage(filename);
+  makeCurrent();
+  QString texture_filepath = QFileInfo(mesh_filename_).absolutePath() + QString(QDir::separator()) + filename;
+
+  QImage image = QImage(texture_filepath);
   texture_ = new QOpenGLTexture(image.mirrored());
   texture_->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
   texture_->setMagnificationFilter(QOpenGLTexture::Linear);
@@ -124,7 +137,6 @@ void QtOpenGL::initializeGL() {
   shader_program_.link();
 
   getAttributeLocations();
-  is_texture_loaded_ = loadTexture(texture_filename_);
 }
 
 void QtOpenGL::keyPressEvent(QKeyEvent* event) {
@@ -196,11 +208,11 @@ void QtOpenGL::createCustomContextMenu() {
 
   QMenu* menu = new QMenu(this);
 
-  QAction* material_action = new QAction("Shading", this);
-  material_action->setCheckable(true);
-  material_action->setChecked(use_material_);
-  connect(material_action, &QAction::toggled, this, &QtOpenGL::setUseMaterial);
-  menu->addAction(material_action);
+  QAction* shading_action = new QAction("Enable shading", this);
+  shading_action->setCheckable(true);
+  shading_action->setChecked(use_material_);
+  connect(shading_action, &QAction::toggled, this, &QtOpenGL::setUseMaterial);
+  menu->addAction(shading_action);
 
   menu->addSeparator();
 
@@ -329,7 +341,7 @@ void QtOpenGL::updateMaterial(const aiMaterial* const material, const int mesh_i
   }
 
   if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE_DIFFUSE(mesh_index), s)) {
-    texture_filename_ = QFileInfo(s.data).absolutePath() + QString(QDir::separator()) + s.C_Str();
+    texture_filename_ = s.C_Str();
   } else {
     texture_filename_.clear();
   }
