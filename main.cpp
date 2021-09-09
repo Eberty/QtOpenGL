@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
-  app.setWindowIcon(QIcon(":QtOpenGL.png"));
+  app.setWindowIcon(QIcon(":qt_opengl.png"));
 
   QString filename = (argc > 1) ? argv[1] : "bunny.obj";
   MainWindow viewer(filename);

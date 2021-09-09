@@ -2,7 +2,7 @@
  * Copyright (c) 2021, Eberty Alves
  */
 
-#include "QtOpenGL.h"
+#include "qt_opengl.h"
 
 #include <assimp/postprocess.h>
 

@@ -59,7 +59,7 @@
   <customwidget>
    <class>QtOpenGL</class>
    <extends>QWidget</extends>
-   <header>QtOpenGL.h</header>
+   <header>qt_opengl.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

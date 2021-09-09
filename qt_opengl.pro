@@ -6,13 +6,13 @@
 
 QT += core gui widgets opengl
 
-TARGET = QtOpenGL
+TARGET = qt_opengl
 TEMPLATE = app
 
 LIBS += -lGL -lassimp
 QMAKE_CXXFLAGS += -Wall -std=c++11
 
-SOURCES += main.cpp main_window.cpp QtOpenGL.cpp
-HEADERS += main_window.h QtOpenGL.h
+SOURCES += main.cpp main_window.cpp qt_opengl.cpp
+HEADERS += main_window.h qt_opengl.h
 RESOURCES += resource.qrc
 FORMS += main_window.ui

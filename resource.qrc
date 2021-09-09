@@ -1,6 +1,6 @@
 <RCC>
   <qresource prefix="/">
-    <file>QtOpenGL.png</file>
+    <file>qt_opengl.png</file>
     <file>phong.frag</file>
     <file>phong.vert</file>
   </qresource>

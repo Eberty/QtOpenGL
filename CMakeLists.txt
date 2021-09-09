@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1.0)
-project(QtOpenGL)
+project(qt_opengl)
 
 add_compile_options(-std=c++11)
 add_definitions(-Wall)
@@ -15,5 +15,5 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets OpenGL)
 
 include_directories(include ${OPENGL_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS})
 
-add_executable(${PROJECT_NAME} main.cpp main_window.cpp QtOpenGL.cpp resource.qrc)
+add_executable(${PROJECT_NAME} main.cpp main_window.cpp qt_opengl.cpp resource.qrc)
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} assimp Qt5::Widgets Qt5::OpenGL)
