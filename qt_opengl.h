@@ -2,8 +2,8 @@
  * Copyright (c) 2021, Eberty Alves
  */
 
-#ifndef QTOPENGL_H_
-#define QTOPENGL_H_
+#ifndef QT_OPENGL_H_
+#define QT_OPENGL_H_
 
 #include <assimp/scene.h>
 
@@ -14,7 +14,8 @@
 #include <vector>
 
 /**
- * TODO.
+ * @brief A QOpenGLWidget based class that allows loading and displaying OpenGL scenes in qt applications. For this
+ * widget, we use the Phong's realistic rendering technique
  */
 class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
@@ -33,42 +34,43 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   ~QtOpenGL();
 
   /**
-   * TODO.
+   * Updates the background color of the viewer.
    *
-   * @param color: TODO.
+   * @param color: new background color of the viewer.
    */
   void setClearColor(const QColor &color);
 
   /**
-   * TODO.
+   * Enable shading method (Phong).
    *
-   * @param use_material: TODO.
+   * @param use_material: True to enable shading.
    */
   void setUseMaterial(const bool use_material);
 
   /**
-   * TODO.
+   * Loads the mesh and updating the viewer.
    *
-   * @param filename: TODO.
+   * @param filename: path to the mesh file to be loaded.
    *
-   * @return TODO.
+   * @return True if the mesh was loaded successfully.
    */
   bool loadMesh(const QString &filename);
 
   /**
-   * TODO.
+   * Create a new QOpenGLTexture from an image.
    *
-   * @param filename: TODO.
+   * @param filename: path to the texture file to be loaded.
    *
-   * @return TODO.
+   * @return True if the texture was loaded successfully.
    */
   bool loadTexture(const QString &filename);
 
  Q_SIGNALS:  // NOLINT
   /**
-   * TODO.
+   * To allow texture loading outside the main thread, this signal is emitted, so texture loading can be done at runtime
+   * even if the context is not the current.
    */
-  void loadMeshSignal();
+  void loadTextureSignal();
 
  protected:
   /**
@@ -101,128 +103,130 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
 
  private:
   /**
-   * TODO.
+   * Create custom context menus to update viewer properties.
    */
   void createCustomContextMenu();
 
   /**
-   * TODO.
+   * Add veetex and fragment shaders to the shader_program_ using source files.
    *
-   * @return TODO.
+   * @return True if shaders were loaded successfully.
    */
   bool initShaders();
 
   /**
-   * TODO.
+   * Enable GL_DEPTH_TEST, GL_NORMALIZE and GL_TEXTURE_2D. Also set glDepthFunc to GL_LESS.
    */
   void enableGlCapabilities();
 
   /**
-   * TODO.
+   * Get location for vertex positions, colors, normals and UV coordinates from the shader program.
    */
   void getAttributeLocations();
 
   /**
-   * TODO.
+   * Resets all viewer properties.
    */
   void resetView();
 
   /**
-   * TODO.
+   * Clear all VBOs vectors.
    */
   void clearAllVBOs();
 
   /**
-   * TODO.
+   * Recursive function to traverse the entire scene and update the VBOs (vertex buffer object).
    *
-   * @param sc: TODO.
-   * @param nd: TODO.
+   * @param sc: assimp scene to be traversed.
    *
-   * @return TODO.
+   * @return Number of traversed vertices.
    */
   int traverseScene(const aiScene *sc, const aiNode *nd);
 
   /**
-   * TODO.
+   * Given a new vertex, updates the scene bounding box (scene min and max).
    *
-   * @param vertex: TODO.
+   * @param vertex: vertex to check if it is a delimiter of the scene.
    */
   void updateSceneBoundingBox(const aiVector3D &vertex);
 
   /**
-   * TODO.
+   * Given a aiMaterial from a mesh gets its diffuse, specular, ambient materials. Get also the texture if exists.
    *
-   * @param material: TODO.
-   * @param mesh_index: TODO.
+   * @param material: assimp loaded material.
+   * @param mesh_index: mesh index of a scene.
    */
   void updateMaterial(const aiMaterial *const material, const int mesh_index);
 
   /**
-   * TODO.
+   * Validates the texture: texture file must be valid (and correctly loaded) and object must contain texture
+   * coordinates..
    *
-   * @return TODO.
+   * @return True if the loaded mesh has a is valid texture.
    */
   bool isValidTexture();
 
   /**
-   * TODO.
+   * Sets the uniform variables in the shader program..
    *
-   * @param MVP: TODO.
+   * @param MVP: model/view/projection matrix.
    */
   void setUniformValues(const QMatrix4x4 &MVP);
 
   /**
-   * TODO.
+   * Set attribute arrays and call glDrawArrays GL_TRIANGLES..
    */
   void drawMesh();
 
   /**
-   * TODO.
+   * A method to helps manipulating and rotating a scene with the mouse.
    *
-   * @param x: TODO.
-   * @param y: TODO.
+   * @param x: x-axis coordinate.
+   * @param y: y-axis coordinate.
    *
-   * @return TODO.
+   * @see http://courses.cms.caltech.edu/cs171/assignments/hw3/hw3-notes/notes-hw3.html
+   *
+   * @return The point at the surface of the ball (scene) that matches the mouse click.
    */
   QVector3D getArcBallVector(int x, int y);
 
-  QColor clear_color_ = Qt::white; /**< TODO */
+  QColor clear_color_ = Qt::white; /**< Background color of the viewer */
 
-  QOpenGLShaderProgram shader_program_; /**< TODO */
-  QOpenGLTexture *texture_ = NULL;      /**< TODO */
+  QOpenGLShaderProgram shader_program_; /**< Allows OpenGL shader programs to be linked and used */
+  QOpenGLTexture *texture_ = NULL;      /**< Encapsulates an OpenGL texture object */
 
-  QString mesh_filename_;    /**< TODO */
-  QString texture_filename_; /**< TODO */
+  QString mesh_filename_;    /**< Path to the loaded mesh */
+  QString texture_filename_; /**< Path to the loaded texture */
 
-  bool is_texture_loaded_ = false; /**< TODO */
-  bool use_material_ = true;       /**< TODO */
+  bool is_texture_loaded_ = false; /**< True if the texture was loaded successfully */
+  bool use_material_ = true;       /**< Enable shading method (Phong) */
 
-  float camera_pos_z_mult_ = 1.0; /**< TODO */
+  float camera_pos_z_mult_ = 1.0; /**< Responsible for zoom in and zoom out */
 
-  int vertex_location_;           /**< TODO */
-  int vertex_color_location_;     /**< TODO */
-  int vertex_normal_location_;    /**< TODO */
-  int vertex_uv_coords_location_; /**< TODO */
+  int vertex_location_;           /**< Location of aPosition attribute in shader */
+  int vertex_color_location_;     /**< Location of aColor attribute in shader */
+  int vertex_normal_location_;    /**< Location of aNormal attribute in shader */
+  int vertex_uv_coords_location_; /**< Location of aCoords attribute in shader */
 
-  std::vector<float> vbo_vertices_;       /**< TODO */
-  std::vector<float> vbo_normals_;        /**< TODO */
-  std::vector<float> vbo_colors_;         /**< TODO */
-  std::vector<float> vbo_texture_coords_; /**< TODO */
+  std::vector<float> vbo_vertices_;       /**< VBO: vertexcies */
+  std::vector<float> vbo_normals_;        /**< VBO: normals */
+  std::vector<float> vbo_colors_;         /**< VBO: colors */
+  std::vector<float> vbo_texture_coords_; /**< VBO: texture coordinates*/
 
-  QPoint last_pos_; /**< TODO */
+  QPoint last_pos_; /**< Last known mouse position during its manipulation */
 
-  QMatrix4x4 rotation_matrix_; /**< TODO */
+  QMatrix4x4 rotation_matrix_; /**< Rotation matrix for the shading technique and visualization */
 
-  QVector3D light_pos_;  /**< TODO */
-  QVector3D camera_pos_; /**< TODO */
+  QVector3D light_pos_;  /**< Light position */
+  QVector3D camera_pos_; /**< Camera position */
 
-  QVector3D scene_min_;    /**< TODO */
-  QVector3D scene_max_;    /**< TODO */
-  QVector3D scene_center_; /**< TODO */
+  QVector3D scene_min_;    /**< Minimum point of the bound box of the scene */
+  QVector3D scene_max_;    /**< Maximum point of the bound box of the scene */
+  QVector3D scene_center_; /**< Point indicating the scene center */
 
-  QVector4D ambient_material_ = QVector4D(0.6, 0.6, 0.6, 1.0);  /**< TODO */
-  QVector4D diffuse_material_ = QVector4D(0.5, 0.0, 0.0, 1.0);  /**< TODO */
-  QVector4D specular_material_ = QVector4D(1.0, 1.0, 1.0, 1.0); /**< TODO */
+  QVector4D ambient_material_ = QVector4D(0.6, 0.6, 0.6, 1.0);  /**< Ambient material for shading */
+  QVector4D diffuse_material_ = QVector4D(0.5, 0.0, 0.0, 1.0);  /**< Diffuse material for shading */
+  QVector4D specular_material_ = QVector4D(1.0, 1.0, 1.0, 1.0); /**< Specular material for shading */
 };
 
-#endif  // QTOPENGL_H_
+#endif  // QT_OPENGL_H_

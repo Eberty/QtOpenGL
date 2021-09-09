@@ -10,7 +10,8 @@
 #include "ui_main_window.h"
 
 /**
- * TODO.
+ * @brief A main window provides a framework for building an application's user interface. Qt has QMainWindow and its
+ * related classes for main window management.
  */
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -19,7 +20,7 @@ class MainWindow : public QMainWindow {
   /**
    * Class constructor.
    *
-   * @param filename: TODO.
+   * @param filename: initial mesh file to be loaded by the qt opengl widget.
    */
   explicit MainWindow(const QString& filename = "");
 
@@ -30,16 +31,17 @@ class MainWindow : public QMainWindow {
 
  private:
   /**
-   * TODO.
+   * Slot called by button click. It will open a QFileDialog allowing to select a file path and call the method to load
+   * the chosen mesh file.
    */
   void selectFile();
 
   /**
-   * TODO.
+   * Loads a mesh file (.obj) and displays it on the screen. Calls QtOpenGL::loadMesh.
    *
-   * @param filename: TODO.
+   * @param filename: mesh file to be loaded by the qt opengl widget.
    *
-   * @return TODO.
+   * @return True if the mesh was loaded successfully.
    */
   bool loadMesh(const QString &filename);
 

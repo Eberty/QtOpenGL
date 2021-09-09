@@ -14,7 +14,7 @@ QtOpenGL::QtOpenGL(QWidget* parent) : QOpenGLWidget(parent) {
   createCustomContextMenu();
 
   connect(
-      this, &QtOpenGL::loadMeshSignal, this,
+      this, &QtOpenGL::loadTextureSignal, this,
       [this]() {
         is_texture_loaded_ = loadTexture(texture_filename_);
       },
@@ -41,7 +41,7 @@ void QtOpenGL::setUseMaterial(const bool use_material) { use_material_ = use_mat
 bool QtOpenGL::loadMesh(const QString& filename) {
   QFileInfo file(filename);
   if (!file.exists(filename) || !file.completeSuffix().endsWith("obj")) {
-    qWarning() << filename << "is not a valid file.";
+    qWarning() << filename << "is not a valid mesh file.";
     return false;
   }
 
@@ -70,7 +70,7 @@ bool QtOpenGL::loadMesh(const QString& filename) {
   light_pos_ = QVector3D(max, max, max) * 3.0;
 
   mesh_filename_ = filename;
-  emit loadMeshSignal();
+  emit loadTextureSignal();
 
   return true;
 }
@@ -83,6 +83,10 @@ bool QtOpenGL::loadTexture(const QString& filename) {
 
   makeCurrent();
   QString texture_filepath = QFileInfo(mesh_filename_).absolutePath() + QString(QDir::separator()) + filename;
+
+  if (texture_) {
+    delete texture_;
+  }
 
   QImage image = QImage(texture_filepath);
   texture_ = new QOpenGLTexture(image.mirrored());
@@ -142,7 +146,7 @@ void QtOpenGL::initializeGL() {
 void QtOpenGL::keyPressEvent(QKeyEvent* event) {
   switch (event->key()) {
     case Qt::Key_Escape:
-      exit(0);
+      QApplication::quit();
       break;
     case Qt::Key_Space:
       resetView();
