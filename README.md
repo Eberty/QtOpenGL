@@ -6,7 +6,7 @@ Minimalist project using CMake, Qt and OpenGL to load and present a 3D object.
 
 **Author:** Eberty Alves da Silva, <eberty.silva@hotmail.com>
 
-*Keywords:** CMake, Qt and OpenGL.
+**Keywords:** CMake, Qt and OpenGL.
 
 &nbsp;
 
@@ -36,7 +36,7 @@ qmake qt_opengl.pro
 make -j$(nproc)
 ```
 
-## **Once the executables are compiled and generated, you can run the C++ programs as following**
+## **Run C++ program**
 
 ```sh
 ./qt_opengl

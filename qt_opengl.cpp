@@ -63,8 +63,7 @@ bool QtOpenGL::loadMesh(const QString& filename) {
   scene_max_ = QVector3D(min, min, min);
 
   traverseScene(scene, scene->mRootNode);
-
-  scene_center_ = QVector3D(scene_min_ + scene_max_) / 2.0;
+  moveObjectToOrigin();
 
   max = qMax(scene_max_.x(), qMax(scene_max_.y(), scene_max_.z()));
   light_pos_ = QVector3D(max, max, max) * 3.0;
@@ -111,10 +110,10 @@ void QtOpenGL::paintGL(void) {
   QMatrix4x4 projection;
   float near = scene_max_.distanceToPoint(scene_min_) / 500.0;
   projection.perspective(45.0f, (width() / static_cast<float>(height() ? height() : 1)), near, 100000.0);
-  camera_pos_ = QVector3D(scene_center_.x(), scene_center_.y(), (scene_max_.z() * 5.0) * camera_pos_z_mult_);
+  camera_pos_ = QVector3D(0, 0, (scene_max_.z() * 5.0 * camera_pos_z_mult_));
 
   QMatrix4x4 view;
-  view.lookAt(camera_pos_, scene_center_, QVector3D(0, 1, 0));
+  view.lookAt(camera_pos_, QVector3D(0, 0, 0), QVector3D(0, 1, 0));
 
   shader_program_.bind();
 
@@ -328,6 +327,18 @@ void QtOpenGL::updateSceneBoundingBox(const aiVector3D& vertex) {
   scene_max_.setX(qMax(scene_max_.x(), vertex.x));
   scene_max_.setY(qMax(scene_max_.y(), vertex.y));
   scene_max_.setZ(qMax(scene_max_.z(), vertex.z));
+}
+
+void QtOpenGL::moveObjectToOrigin() {
+  QVector3D scene_center = QVector3D(scene_min_ + scene_max_) / 2.0;
+  for (size_t i = 0; i < vbo_vertices_.size(); i += 3) {
+    vbo_vertices_[i] -= scene_center.x();
+    vbo_vertices_[i + 1] -= scene_center.y();
+    vbo_vertices_[i + 2] -= scene_center.z();
+  }
+
+  scene_min_ -= scene_center;
+  scene_max_ -= scene_center;
 }
 
 void QtOpenGL::updateMaterial(const aiMaterial* const material, const int mesh_index) {

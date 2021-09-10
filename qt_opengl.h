@@ -151,6 +151,11 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
   void updateSceneBoundingBox(const aiVector3D &vertex);
 
   /**
+   * Move object to the origin.
+   */
+  void moveObjectToOrigin();
+
+  /**
    * Given a aiMaterial from a mesh gets its diffuse, specular, ambient materials. Get also the texture if exists.
    *
    * @param material: assimp loaded material.
@@ -222,7 +227,6 @@ class QtOpenGL : public QOpenGLWidget, protected QOpenGLFunctions {
 
   QVector3D scene_min_;    /**< Minimum point of the bound box of the scene */
   QVector3D scene_max_;    /**< Maximum point of the bound box of the scene */
-  QVector3D scene_center_; /**< Point indicating the scene center */
 
   QVector4D ambient_material_ = QVector4D(0.6, 0.6, 0.6, 1.0);  /**< Ambient material for shading */
   QVector4D diffuse_material_ = QVector4D(0.5, 0.0, 0.0, 1.0);  /**< Diffuse material for shading */
