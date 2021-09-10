@@ -108,8 +108,8 @@ void QtOpenGL::paintGL(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   QMatrix4x4 projection;
-  float near = scene_max_.distanceToPoint(scene_min_) / 500.0;
-  projection.perspective(45.0f, (width() / static_cast<float>(height() ? height() : 1)), near, 100000.0);
+  float camera_near = scene_max_.distanceToPoint(scene_min_) / 500.0;
+  projection.perspective(45.0f, (width() / static_cast<float>(height() ? height() : 1)), camera_near, 100000.0);
   camera_pos_ = QVector3D(0, 0, (scene_max_.z() * 5.0 * camera_pos_z_mult_));
 
   QMatrix4x4 view;
