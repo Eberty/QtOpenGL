@@ -25,7 +25,6 @@ cd QtOpenGL/
 mkdir build && cd build
 cmake ..
 make -j$(nproc)
-cd ..
 ```
 
 ## **Building with Qt (.pro file)**
