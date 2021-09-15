@@ -1,3 +1,4 @@
+
 # QtOpenGL
 
 ## **Overview**
@@ -41,3 +42,7 @@ make -j$(nproc)
 ```sh
 ./qt_opengl
 ```
+You can extract and use the .obj files in this compressed file: [tex-models.zip](https://github.com/Eberty/QtOpenGL/blob/main/tex-models.zip)
+
+https://user-images.githubusercontent.com/15674033/133436818-e3936fee-c6a9-4928-ac84-08afd18d3e01.mp4
+
